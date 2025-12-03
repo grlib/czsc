@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 from rs_czsc import CZSC
 from plotly import graph_objects as go
+from czsc.utils.sig import get_zs_seq
 
 
 class KlineChart:
@@ -618,9 +619,8 @@ def plot_czsc_chart(czsc_obj: CZSC, **kwargs) -> KlineChart:
 
         # 绘制中枢
         if show_zs:
-            from czsc.utils.sig import get_zs_seq
             zs_list = get_zs_seq(bi_list)
-            if len(zs_list) > 0:
+            if zs_list:
                 chart.add_zs(zs_list, row=1)
 
     return chart
