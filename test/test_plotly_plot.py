@@ -56,3 +56,45 @@ def test_kline_chart():
     assert os.path.exists(file_html)
     os.remove(file_html)
     assert not os.path.exists(file_html)
+
+
+def test_plot_czsc_chart_with_zs():
+    """测试绘制带中枢的K线图"""
+    from czsc.utils.plotly_plot import plot_czsc_chart
+    
+    # 使用mock数据
+    df = mock.generate_symbol_kines("000001", "日线", sdt="20230101", edt="20240101", seed=42)
+    bars = []
+    for i, row in df.iterrows():
+        bar = RawBar(
+            symbol=row['symbol'], 
+            id=i, 
+            freq=Freq.D, 
+            open=row['open'], 
+            dt=row['dt'],
+            close=row['close'], 
+            high=row['high'], 
+            low=row['low'], 
+            vol=row['vol'], 
+            amount=row['amount']
+        )
+        bars.append(bar)
+    
+    c = CZSC(bars, max_bi_num=50)
+    
+    # 测试不显示中枢
+    chart = plot_czsc_chart(c, show_zs=False)
+    assert chart is not None
+    file_html1 = "czsc_chart_no_zs.html"
+    chart.fig.write_html(file_html1)
+    assert os.path.exists(file_html1)
+    os.remove(file_html1)
+    
+    # 测试显示中枢
+    chart_with_zs = plot_czsc_chart(c, show_zs=True)
+    assert chart_with_zs is not None
+    file_html2 = "czsc_chart_with_zs.html"
+    chart_with_zs.fig.write_html(file_html2)
+    assert os.path.exists(file_html2)
+    os.remove(file_html2)
+    assert not os.path.exists(file_html2)
