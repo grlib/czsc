@@ -455,10 +455,14 @@ class KlineChart:
         line_width = kwargs.get('line_width', 1)
 
         for zs in zs_list:
+            # Convert pandas Timestamp to numpy.datetime64 for compatibility with categorical x-axis
+            x0 = pd.Timestamp(zs.sdt).to_numpy()
+            x1 = pd.Timestamp(zs.edt).to_numpy()
+
             self.fig.add_shape(
                 type="rect",
-                x0=zs.sdt,
-                x1=zs.edt,
+                x0=x0,
+                x1=x1,
                 y0=zs.zd,
                 y1=zs.zg,
                 fillcolor=fillcolor,
