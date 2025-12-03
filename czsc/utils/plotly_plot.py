@@ -8,8 +8,10 @@ describe: 使用 Plotly 构建绘图模块
 import os
 import numpy as np
 import pandas as pd
+from typing import List
 from rs_czsc import CZSC
 from plotly import graph_objects as go
+from czsc.core import ZS
 from czsc.utils.sig import get_zs_seq
 
 
@@ -424,7 +426,7 @@ class KlineChart:
         self.fig.add_trace(bar, row=row, col=1)
         self.fig.update_traces(xaxis="x1")
 
-    def add_zs(self, zs_list, row: int = 1, **kwargs):
+    def add_zs(self, zs_list: List[ZS], row: int = 1, **kwargs):
         """绘制中枢（ZS）
 
         在K线图上绘制中枢矩形区域，显示中枢的上沿(zg)、下沿(zd)和时间范围。
@@ -440,7 +442,7 @@ class KlineChart:
         3. 矩形填充颜色默认为半透明蓝色，边框为实线
         4. 注意：plotly的shape不支持图例，如需图例需使用其他方法
 
-        :param zs_list: 中枢对象列表，每个对象应包含 sdt, edt, zd, zg 属性
+        :param zs_list: List[ZS], 中枢对象列表，每个对象应包含 sdt, edt, zd, zg 属性
         :param row: 放入第几个子图，默认为 1
         :param kwargs:
             - fillcolor: 矩形填充颜色，默认 'rgba(135,206,250,0.2)'
