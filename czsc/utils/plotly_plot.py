@@ -455,7 +455,7 @@ class KlineChart:
         for i, zs in enumerate(zs_list):
             # 只在第一个中枢显示图例
             legend_name = "中枢" if i == 0 and show_legend else None
-            
+
             self.fig.add_shape(
                 type="rect",
                 x0=zs.sdt,
@@ -484,10 +484,10 @@ class KlineChart:
         self.fig.update_layout(**kwargs)
         self.fig.write_html(file_name)
         webbrowser.open(file_name)
-        
+
     def show(self, **kwargs):
         """显示图表
-        
+
         支持所有 plotly layout 参数，详见：https://plotly.com/python/reference/layout/
         """
         self.fig.update_layout(**kwargs)
@@ -591,14 +591,14 @@ def plot_nx_graph(g, **kwargs) -> go.Figure:
 
 def plot_czsc_chart(czsc_obj: CZSC, **kwargs) -> KlineChart:
     """使用 plotly 绘制 CZSC 对象
-    
+
     :param czsc_obj: CZSC 对象
     :param kwargs:
         - height: 图表高度，默认 600
         - ma_system: 均线系统，默认 (5, 10, 21, 34, 55, 89, 144)
         - show_zs: 是否绘制中枢，默认 False
     :return: KlineChart 对象
-    """    
+    """
     height = kwargs.get('height', 600)
     ma_system = kwargs.get('ma_system', (5, 10, 21, 34, 55, 89, 144))
     show_zs = kwargs.get('show_zs', False)
@@ -618,16 +618,16 @@ def plot_czsc_chart(czsc_obj: CZSC, **kwargs) -> KlineChart:
         bi2 = [{'dt': bi_list[-1].fx_b.dt, "bi": bi_list[-1].fx_b.fx, "text": bi_list[-1].fx_b.mark.value[0]}]
         bi = pd.DataFrame(bi1 + bi2)
         fx = pd.DataFrame([{'dt': x.dt, "fx": x.fx} for x in czsc_obj.fx_list])
-        
+
         # 分型用虚线表示
         chart.add_scatter_indicator(fx['dt'], fx['fx'], name="分型", row=1, line_width=1.8, line_dash='dash')
         chart.add_scatter_indicator(bi['dt'], bi['bi'], name="笔", text=bi['text'], row=1, line_width=1.8)
-        
+
         # 绘制中枢
         if show_zs:
             from czsc.utils.sig import get_zs_seq
             zs_list = get_zs_seq(bi_list)
             if len(zs_list) > 0:
                 chart.add_zs(zs_list, row=1)
-    
+
     return chart
