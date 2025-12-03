@@ -437,6 +437,7 @@ class KlineChart:
             - y0: 中枢下沿 (zd)
             - y1: 中枢上沿 (zg)
         3. 矩形填充颜色默认为半透明蓝色，边框为实线
+        4. 注意：plotly的shape不支持图例，如需图例需使用其他方法
 
         :param zs_list: 中枢对象列表，每个对象应包含 sdt, edt, zd, zg 属性
         :param row: 放入第几个子图，默认为 1
@@ -444,18 +445,13 @@ class KlineChart:
             - fillcolor: 矩形填充颜色，默认 'rgba(135,206,250,0.2)'
             - line_color: 矩形边框颜色，默认 'rgba(135,206,250,0.8)'
             - line_width: 边框宽度，默认 1
-            - show_legend: 是否显示图例，默认 True（仅第一个中枢显示）
         :return:
         """
         fillcolor = kwargs.get('fillcolor', 'rgba(135,206,250,0.2)')  # 浅蓝色半透明
         line_color = kwargs.get('line_color', 'rgba(135,206,250,0.8)')  # 浅蓝色
         line_width = kwargs.get('line_width', 1)
-        show_legend = kwargs.get('show_legend', True)
 
-        for i, zs in enumerate(zs_list):
-            # 只在第一个中枢显示图例
-            legend_name = "中枢" if i == 0 and show_legend else None
-
+        for zs in zs_list:
             self.fig.add_shape(
                 type="rect",
                 x0=zs.sdt,
@@ -467,9 +463,6 @@ class KlineChart:
                 layer="below",
                 row=row,
                 col=1,
-                name=legend_name,
-                showlegend=True if legend_name else False,
-                legend="legend",
             )
 
     def open_in_browser(self, file_name: str = None, **kwargs):
