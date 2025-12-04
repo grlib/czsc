@@ -8,8 +8,11 @@ describe: 使用 Plotly 构建绘图模块
 import os
 import numpy as np
 import pandas as pd
+from typing import List
 from rs_czsc import CZSC
 from plotly import graph_objects as go
+from czsc.core import ZS
+from czsc.utils.sig import get_zs_seq
 
 
 class KlineChart:
@@ -423,6 +426,59 @@ class KlineChart:
         self.fig.add_trace(bar, row=row, col=1)
         self.fig.update_traces(xaxis="x1")
 
+    def add_zs(self, zs_list: List[ZS], row: int = 1, **kwargs):
+        """绘制中枢（ZS）
+
+        在K线图上绘制中枢矩形区域，显示中枢的上沿(zg)、下沿(zd)和时间范围。
+
+        函数执行逻辑：
+
+        1. 遍历中枢列表 zs_list 中的每个中枢对象
+        2. 只绘制至少包含3笔的中枢（根据缠论定义，中枢需要至少3笔重叠）
+        3. 对于每个有效中枢，使用 add_shape 方法绘制一个矩形，矩形的：
+            - x0: 中枢开始时间 (sdt)
+            - x1: 中枢结束时间 (edt)
+            - y0: 中枢下沿 (zd) - 前三笔低点的最大值
+            - y1: 中枢上沿 (zg) - 前三笔高点的最小值
+        4. 矩形填充颜色默认为半透明蓝色，边框为实线
+        5. 注意：plotly的shape不支持图例，如需图例需使用其他方法
+
+        :param zs_list: List[ZS], 中枢对象列表，每个对象应包含 sdt, edt, zd, zg 属性
+        :param row: 放入第几个子图，默认为 1
+        :param kwargs:
+            - fillcolor: 矩形填充颜色，默认 'rgba(135,206,250,0.2)'
+            - line_color: 矩形边框颜色，默认 'rgba(135,206,250,0.8)'
+            - line_width: 边框宽度，默认 1
+            - min_bi_num: 最小笔数量，默认为3（符合缠论中枢定义）
+        :return:
+        """
+        fillcolor = kwargs.get('fillcolor', 'rgba(135,206,250,0.2)')  # 浅蓝色半透明
+        line_color = kwargs.get('line_color', 'rgba(135,206,250,0.8)')  # 浅蓝色
+        line_width = kwargs.get('line_width', 1)
+        min_bi_num = kwargs.get('min_bi_num', 3)  # 默认至少3笔才算有效中枢
+
+        for zs in zs_list:
+            # 只绘制包含至少min_bi_num笔的中枢
+            if len(zs.bis) < min_bi_num:
+                continue
+
+            # Convert pandas Timestamp to numpy.datetime64 for compatibility with categorical x-axis
+            x0 = pd.Timestamp(zs.sdt).to_numpy()
+            x1 = pd.Timestamp(zs.edt).to_numpy()
+
+            self.fig.add_shape(
+                type="rect",
+                x0=x0,
+                x1=x1,
+                y0=zs.zd,
+                y1=zs.zg,
+                fillcolor=fillcolor,
+                line=dict(color=line_color, width=line_width),
+                layer="below",
+                row=row,
+                col=1,
+            )
+
     def open_in_browser(self, file_name: str = None, **kwargs):
         """在浏览器中打开"""
         import webbrowser
@@ -435,10 +491,10 @@ class KlineChart:
         self.fig.update_layout(**kwargs)
         self.fig.write_html(file_name)
         webbrowser.open(file_name)
-        
+
     def show(self, **kwargs):
         """显示图表
-        
+
         支持所有 plotly layout 参数，详见：https://plotly.com/python/reference/layout/
         """
         self.fig.update_layout(**kwargs)
@@ -542,14 +598,17 @@ def plot_nx_graph(g, **kwargs) -> go.Figure:
 
 def plot_czsc_chart(czsc_obj: CZSC, **kwargs) -> KlineChart:
     """使用 plotly 绘制 CZSC 对象
-    
+
     :param czsc_obj: CZSC 对象
     :param kwargs:
-        - height: 图表高度，默认 800
+        - height: 图表高度，默认 600
+        - ma_system: 均线系统，默认 (5, 10, 21, 34, 55, 89, 144)
+        - show_zs: 是否绘制中枢，默认 False
     :return: KlineChart 对象
-    """    
+    """
     height = kwargs.get('height', 600)
     ma_system = kwargs.get('ma_system', (5, 10, 21, 34, 55, 89, 144))
+    show_zs = kwargs.get('show_zs', False)
 
     bi_list = czsc_obj.bi_list
     df = pd.DataFrame([x.__dict__ for x in czsc_obj.bars_raw])
@@ -566,8 +625,15 @@ def plot_czsc_chart(czsc_obj: CZSC, **kwargs) -> KlineChart:
         bi2 = [{'dt': bi_list[-1].fx_b.dt, "bi": bi_list[-1].fx_b.fx, "text": bi_list[-1].fx_b.mark.value[0]}]
         bi = pd.DataFrame(bi1 + bi2)
         fx = pd.DataFrame([{'dt': x.dt, "fx": x.fx} for x in czsc_obj.fx_list])
-        
+
         # 分型用虚线表示
         chart.add_scatter_indicator(fx['dt'], fx['fx'], name="分型", row=1, line_width=1.8, line_dash='dash')
         chart.add_scatter_indicator(bi['dt'], bi['bi'], name="笔", text=bi['text'], row=1, line_width=1.8)
+
+        # 绘制中枢
+        if show_zs:
+            zs_list = get_zs_seq(bi_list)
+            if zs_list:
+                chart.add_zs(zs_list, row=1)
+
     return chart
