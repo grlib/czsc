@@ -434,13 +434,14 @@ class KlineChart:
         函数执行逻辑：
 
         1. 遍历中枢列表 zs_list 中的每个中枢对象
-        2. 对于每个中枢，使用 add_shape 方法绘制一个矩形，矩形的：
+        2. 只绘制至少包含3笔的中枢（根据缠论定义，中枢需要至少3笔重叠）
+        3. 对于每个有效中枢，使用 add_shape 方法绘制一个矩形，矩形的：
             - x0: 中枢开始时间 (sdt)
             - x1: 中枢结束时间 (edt)
-            - y0: 中枢下沿 (zd)
-            - y1: 中枢上沿 (zg)
-        3. 矩形填充颜色默认为半透明蓝色，边框为实线
-        4. 注意：plotly的shape不支持图例，如需图例需使用其他方法
+            - y0: 中枢下沿 (zd) - 前三笔低点的最大值
+            - y1: 中枢上沿 (zg) - 前三笔高点的最小值
+        4. 矩形填充颜色默认为半透明蓝色，边框为实线
+        5. 注意：plotly的shape不支持图例，如需图例需使用其他方法
 
         :param zs_list: List[ZS], 中枢对象列表，每个对象应包含 sdt, edt, zd, zg 属性
         :param row: 放入第几个子图，默认为 1
@@ -448,13 +449,19 @@ class KlineChart:
             - fillcolor: 矩形填充颜色，默认 'rgba(135,206,250,0.2)'
             - line_color: 矩形边框颜色，默认 'rgba(135,206,250,0.8)'
             - line_width: 边框宽度，默认 1
+            - min_bi_num: 最小笔数量，默认为3（符合缠论中枢定义）
         :return:
         """
         fillcolor = kwargs.get('fillcolor', 'rgba(135,206,250,0.2)')  # 浅蓝色半透明
         line_color = kwargs.get('line_color', 'rgba(135,206,250,0.8)')  # 浅蓝色
         line_width = kwargs.get('line_width', 1)
+        min_bi_num = kwargs.get('min_bi_num', 3)  # 默认至少3笔才算有效中枢
 
         for zs in zs_list:
+            # 只绘制包含至少min_bi_num笔的中枢
+            if len(zs.bis) < min_bi_num:
+                continue
+
             # Convert pandas Timestamp to numpy.datetime64 for compatibility with categorical x-axis
             x0 = pd.Timestamp(zs.sdt).to_numpy()
             x1 = pd.Timestamp(zs.edt).to_numpy()
